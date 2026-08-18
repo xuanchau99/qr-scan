@@ -63,6 +63,12 @@
         </div>
       </div>
 
+      <div id="recipientNameEditor" class="recipient-name-editor" hidden>
+        <label for="manualRecipientName">Tên người nhận hiển thị</label>
+        <input id="manualRecipientName" type="text" autocomplete="off" maxlength="80" placeholder="Nhập tên người nhận">
+        <small>QR này không chứa tên. Tên bạn nhập chỉ dùng để hiển thị.</small>
+      </div>
+
       <form id="amountForm" class="amount-card">
         <label for="amount">Số tiền</label>
         <div class="money-input">
@@ -86,7 +92,7 @@
         <canvas id="receiptCanvas" width="852" height="1847" aria-label="Biên lai mô phỏng"></canvas>
       </div>
       <div class="receipt-actions">
-        <button id="downloadReceipt" class="button secondary" type="button">Tải ảnh demo</button>
+        <button id="downloadReceipt" class="button secondary" type="button">Trang chủ</button>
         <button id="newTransfer" class="button primary" type="button">Giao dịch khác</button>
       </div>
     </section>
@@ -96,6 +102,7 @@
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@6/dist/tesseract.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

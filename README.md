@@ -18,4 +18,8 @@ Sau đó mở `http://localhost:8080`. Không mở trực tiếp bằng giao th�
 
 Nút **Dùng QR mẫu** đọc file `qr-sample.png`. jQuery và jsQR được tải từ CDN nên lần chạy đầu cần có kết nối Internet.
 
-> Đây là giao diện mô phỏng, không kết nối API ngân hàng và không thực hiện chuyển tiền thật. Ảnh kết quả luôn có nhãn “BẢN DEMO • MÔ PHỎNG”.
+## Tên người nhận
+
+Ứng dụng ưu tiên tên có trong payload QR. Nếu QR không chứa tên, ứng dụng dùng OCR để đọc phần chữ trên ảnh; nếu OCR không nhận diện được thì hiển thị ô nhập tên thủ công.
+
+> Đây là giao diện mô phỏng, không thực hiện chuyển tiền hoặc xác nhận giao dịch thật.

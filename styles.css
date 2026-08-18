@@ -201,6 +201,30 @@ h1 { margin: 0; font-size: clamp(28px, 8vw, 38px); letter-spacing: -.035em; }
 .recipient-copy p { display: inline; margin: 0; color: #d8d1de; font-size: 14px; }
 .recipient-copy .account-number::before { content: " • "; color: #756c7e; }
 
+.recipient-name-editor {
+  margin-top: 12px;
+  padding: 16px 18px;
+  border: 1px solid rgba(176, 98, 255, .24);
+  border-radius: 18px;
+  background: rgba(133, 57, 210, .08);
+}
+.recipient-name-editor label { display: block; color: #d8b6fa; font-size: 13px; }
+.recipient-name-editor input {
+  width: 100%;
+  margin-top: 7px;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid rgba(255,255,255,.16);
+  outline: 0;
+  color: #fff;
+  background: transparent;
+  font-size: 18px;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+.recipient-name-editor input::placeholder { color: #706678; text-transform: none; }
+.recipient-name-editor small { display: block; margin-top: 8px; color: var(--muted); font-size: 12px; }
+
 .amount-card { margin-top: 16px; padding: 22px; }
 .money-input { display: flex; align-items: baseline; border-bottom: 1px solid rgba(255,255,255,.14); }
 .money-input input {

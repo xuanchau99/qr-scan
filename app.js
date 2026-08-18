@@ -97,7 +97,7 @@
 
   function titleCaseName(name) {
     const clean = String(name || "").replace(/\s+/g, " ").trim();
-    return clean || "TÊN KHÔNG CÓ TRONG MÃ QR";
+    return clean;
   }
 
   function findVietQrProvider(root) {
@@ -234,9 +234,47 @@
     });
   }
 
+  function extractRecipientNameFromText(text) {
+    const excluded = /(?:QU[EÉ]T|CHUY[EỂ]N|TI[EỀ]N|VIETQR|NAPAS|NG[AÂ]N H[AÀ]NG|BANK|ACCOUNT|T[AÀ]I KHO[AẢ]N|VND|QR CODE)/i;
+    const candidates = String(text || "")
+      .split(/\r?\n/)
+      .map((line) => line.replace(/[^\p{L}\s'.-]/gu, " ").replace(/\s+/g, " ").trim())
+      .filter((line) => {
+        const words = line.split(" ").filter(Boolean);
+        const letters = line.replace(/[^\p{L}]/gu, "");
+        return words.length >= 2 && words.length <= 7 && letters.length >= 5 && line === line.toUpperCase() && !excluded.test(line);
+      })
+      .sort((a, b) => b.replace(/\s/g, "").length - a.replace(/\s/g, "").length);
+    return candidates[0] || "";
+  }
+
+  async function readRecipientNameWithOcr(source) {
+    if (!source || !window.Tesseract || typeof window.Tesseract.createWorker !== "function") return "";
+    setStatus("QR không chứa tên, đang đọc phần chữ trên ảnh…");
+    let worker;
+    try {
+      worker = await window.Tesseract.createWorker("eng", 1, {
+        logger: (message) => {
+          if (message.status === "recognizing text" && Number.isFinite(message.progress)) {
+            setStatus(`Đang đọc tên người nhận… ${Math.round(message.progress * 100)}%`);
+          }
+        }
+      });
+      const result = await worker.recognize(source);
+      return extractRecipientNameFromText(result.data && result.data.text);
+    } catch (error) {
+      return "";
+    } finally {
+      if (worker) await worker.terminate();
+    }
+  }
+
   function applyRecipient(recipient) {
     state.recipient = recipient;
-    $("#recipientName").text(recipient.name);
+    const hasQrName = Boolean(recipient.name);
+    $("#recipientName").text(hasQrName ? recipient.name : "CHƯA CÓ TÊN NGƯỜI NHẬN");
+    $("#recipientNameEditor").prop("hidden", hasQrName);
+    $("#manualRecipientName").val("");
     $("#bankName").text(recipient.bank.code);
     $("#accountNumber").text(recipient.account);
     $("#bankLogo")
@@ -262,13 +300,15 @@
     }
     stopCamera();
     showScreen("#confirmScreen");
-    setTimeout(() => $("#amount").trigger("focus"), 120);
+    setTimeout(() => $(hasQrName ? "#amount" : "#manualRecipientName").trigger("focus"), 120);
   }
 
-  async function processQrResult(result) {
+  async function processQrResult(result, ocrSource) {
     if (!result || !result.data) throw new Error("Không tìm thấy mã QR trong ảnh.");
     await bankCatalogReady;
-    applyRecipient(parseVietQr(result.data));
+    const recipient = parseVietQr(result.data);
+    if (!recipient.name && ocrSource) recipient.name = await readRecipientNameWithOcr(ocrSource);
+    applyRecipient(recipient);
   }
 
   async function startCamera() {
@@ -312,7 +352,7 @@
         if (result) {
           state.scanning = false;
           setStatus("Đã nhận diện QR, đang tải thông tin ngân hàng…");
-          processQrResult(result).catch((error) => {
+          processQrResult(result, scanCanvas).catch((error) => {
             setStatus(error.message, true);
             stopCamera();
           });
@@ -331,7 +371,8 @@
     const image = new Image();
     image.onload = async function () {
       try {
-        await processQrResult(decodeImageSource(image, image.naturalWidth, image.naturalHeight));
+        const result = decodeImageSource(image, image.naturalWidth, image.naturalHeight);
+        await processQrResult(result, scanCanvas);
       } catch (error) {
         setStatus(error.message, true);
       } finally {
@@ -372,13 +413,13 @@
     return { time, full: `${time} ${day}` };
   }
 
-  function fitText(ctx, text, maxWidth, startSize, weight) {
+  function fitText(ctx, text, maxWidth, startSize, weight, minSize = 20) {
     let size = startSize;
     do {
       ctx.font = `${weight || 600} ${size}px -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif`;
       if (ctx.measureText(text).width <= maxWidth) return size;
       size -= 2;
-    } while (size >= 20);
+    } while (size >= minSize);
     return size;
   }
 
@@ -473,7 +514,7 @@
     fitText(receiptCtx, formatMoney(state.amount), 690, 58, 400);
     receiptCtx.fillText(formatMoney(state.amount), w / 2, 709);
 
-    const name = recipient.name.toUpperCase();
+    const name = (recipient.name || "NGƯỜI NHẬN").toUpperCase();
     receiptCtx.fillStyle = "#a23ed8";
     fitText(receiptCtx, name, 680, 32, 650);
     receiptCtx.fillText(name, w / 2, 815);
@@ -482,20 +523,27 @@
     drawBankLogo(receiptCtx, recipient.bank, 239, 867, officialBankLogo);
     receiptCtx.textAlign = "left";
     receiptCtx.fillStyle = "#ffffff";
-    fitText(receiptCtx, recipient.bank.code.toUpperCase(), 135, 29, 700);
-    receiptCtx.fillText(recipient.bank.code.toUpperCase(), 273, 877);
+    const bankCode = recipient.bank.code.toUpperCase();
+    const bankTextX = 273;
+    fitText(receiptCtx, bankCode, 175, 29, 700, 16);
+    receiptCtx.fillText(bankCode, bankTextX, 877);
+
+    // Tên ngân hàng có độ dài khác nhau; đặt vạch ngăn theo chiều rộng thực tế.
+    const bankTextWidth = receiptCtx.measureText(bankCode).width;
+    const dividerX = Math.min(470, Math.max(427, bankTextX + bankTextWidth + 18));
 
     receiptCtx.strokeStyle = "rgba(178, 146, 194, .42)";
     receiptCtx.lineWidth = 2;
     receiptCtx.beginPath();
-    receiptCtx.moveTo(427, 849);
-    receiptCtx.lineTo(427, 886);
+    receiptCtx.moveTo(dividerX, 849);
+    receiptCtx.lineTo(dividerX, 886);
     receiptCtx.stroke();
 
     const formattedAccount = formatAccount(recipient.account);
+    const accountTextX = dividerX + 24;
     receiptCtx.fillStyle = "#ffffff";
-    fitText(receiptCtx, formattedAccount, 330, 29, 450);
-    receiptCtx.fillText(formattedAccount, 453, 878);
+    fitText(receiptCtx, formattedAccount, 786 - accountTextX, 29, 450);
+    receiptCtx.fillText(formattedAccount, accountTextX, 878);
 
     // Hai hàng chi tiết dùng đúng lề, baseline và cỡ chữ từ file 2.png.
     receiptCtx.textAlign = "left";
@@ -560,6 +608,13 @@
 
   $(".quick-amounts button").on("click", function () {
     $("#amount").val(formatAmountInput($(this).data("amount"))).trigger("input");
+  });
+
+  $("#manualRecipientName").on("input", function () {
+    if (!state.recipient) return;
+    const name = String(this.value || "").replace(/\s+/g, " ").trim();
+    state.recipient.name = name;
+    $("#recipientName").text(name || "CHƯA CÓ TÊN NGƯỜI NHẬN");
   });
 
   $("#amountForm").on("submit", async function (event) {
