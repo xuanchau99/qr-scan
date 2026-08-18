@@ -97,33 +97,124 @@
 
   function titleCaseName(name) {
     const clean = String(name || "").replace(/\s+/g, " ").trim();
-    return clean || "KHÔNG CÓ TÊN TRONG QR";
+    return clean || "TÊN KHÔNG CÓ TRONG MÃ QR";
+  }
+
+  function findVietQrProvider(root) {
+    for (let id = 26; id <= 51; id += 1) {
+      const value = root[String(id).padStart(2, "0")];
+      if (!value) continue;
+      const provider = parseTlv(value);
+      if (provider["00"] === "A000000727" || value.includes("A000000727")) return provider;
+    }
+    return {};
+  }
+
+  function momoBank() {
+    return BANKS["971025"] || {
+      code: "MoMo",
+      name: "Ví điện tử MoMo",
+      css: "official",
+      logo: "https://cdn.vietqr.io/img/momo.png"
+    };
+  }
+
+  function safeDecode(value) {
+    try {
+      return decodeURIComponent(String(value || "").replace(/\+/g, " "));
+    } catch (error) {
+      return String(value || "");
+    }
+  }
+
+  function parseMomoPayload(payload) {
+    const raw = String(payload || "").trim();
+    const parts = raw.split("|");
+
+    // QR cá nhân MoMo: 2|99|số điện thoại|họ tên||0|0|số tiền||transfer_myqr
+    if (parts[0] === "2" && parts[1] === "99" && parts.length >= 4) {
+      const phone = safeDecode(parts[2]).trim();
+      const name = safeDecode(parts[3]).trim();
+      const amount = Number(String(parts[7] || "").replace(/\D/g, ""));
+      if (phone) {
+        return {
+          name: titleCaseName(name),
+          account: phone,
+          bankBin: "971025",
+          bank: momoBank(),
+          amount: Number.isSafeInteger(amount) ? amount : 0,
+          raw,
+          source: "momo-personal"
+        };
+      }
+    }
+
+    // QR/deeplink merchant MoMo chỉ dùng các trường thực sự có trong URL.
+    if (/momo/i.test(raw) && /^(https?:|momo:)/i.test(raw)) {
+      try {
+        const url = new URL(raw);
+        const params = url.searchParams;
+        const name = params.get("merchantname") || params.get("partnerName") || params.get("storeName");
+        const account = params.get("partnerCode") || params.get("storeId") || params.get("mobile");
+        const amount = Number(String(params.get("amount") || "").replace(/\D/g, ""));
+        if (name && account) {
+          return {
+            name: titleCaseName(name),
+            account,
+            bankBin: "971025",
+            bank: momoBank(),
+            amount: Number.isSafeInteger(amount) ? amount : 0,
+            raw,
+            source: "momo-merchant"
+          };
+        }
+        throw new Error("QR MoMo này là mã thanh toán dạng token; cần API MoMo của tài khoản doanh nghiệp để lấy thông tin thật.");
+      } catch (error) {
+        if (error instanceof TypeError) return null;
+        throw error;
+      }
+    }
+
+    return null;
   }
 
   function parseVietQr(payload) {
+    const momo = parseMomoPayload(payload);
+    if (momo) return momo;
+
     const root = parseTlv(String(payload || "").trim());
-    const providerField = root["38"] || root["26"] || "";
-    const provider = parseTlv(providerField);
+    const provider = findVietQrProvider(root);
     const service = parseTlv(provider["01"] || "");
-    const bankBin = service["00"] || provider["00"] || "";
+    let bankBin = service["00"] || "";
     const vietQrAccount = service["01"] || provider["01"] || "";
     // Một số QR TPBank/Napas đồng thời chứa alias ở trường VietQR 38
     // và số tài khoản dạng số ở cuối trường 15 (như qr-sample.png).
     const legacyAccountMatch = String(root["15"] || "").match(/0000(\d{8,19})$/);
     const account = legacyAccountMatch ? legacyAccountMatch[1] : vietQrAccount;
-    const bank = BANKS[bankBin] || {
+    const additionalData = parseTlv(root["62"] || "");
+    const reference = additionalData["05"] || additionalData["08"] || "";
+    const isMomoVietQr = bankBin === "971025" || /^99MM/i.test(account) || /^MOMOW2W/i.test(reference);
+    if (isMomoVietQr) bankBin = "971025";
+
+    const bank = isMomoVietQr ? momoBank() : (BANKS[bankBin] || {
       code: bankBin ? `BIN ${bankBin}` : "Ngân hàng",
       name: bankBin ? `Ngân hàng BIN ${bankBin}` : "Không xác định",
       css: "generic"
-    };
+    });
 
-    if (!account) throw new Error("QR không chứa số tài khoản VietQR hợp lệ.");
+    if (!account || !bankBin) {
+      throw new Error("QR không chứa thông tin tài khoản VietQR/MoMo được hỗ trợ.");
+    }
+
+    const amount = Number(String(root["54"] || "").replace(/[^\d.]/g, ""));
 
     return {
       name: titleCaseName(root["59"]),
       account,
       bankBin,
       bank,
+      amount: Number.isFinite(amount) && amount > 0 ? Math.round(amount) : 0,
+      purpose: additionalData["08"] || "",
       raw: payload
     };
   }
@@ -163,6 +254,11 @@
         .one("load.bankLogo", () => $logoBox.addClass("has-image"))
         .one("error.bankLogo", () => $logoBox.removeClass("has-image"))
         .attr("src", bankVisual);
+    }
+    if (recipient.amount > 0) {
+      $("#amount").val(formatAmountInput(recipient.amount)).trigger("input");
+    } else {
+      $("#amount").val("").trigger("input");
     }
     stopCamera();
     showScreen("#confirmScreen");
@@ -371,12 +467,6 @@
     receiptCtx.drawImage(receiptBackground, 205, 880, 145, 48, 55, 880, 145, 48);
     receiptCtx.drawImage(receiptBackground, 330, 938, 270, 54, 55, 938, 270, 54);
 
-    // Thanh trạng thái iPhone.
-    receiptCtx.fillStyle = "#ffffff";
-    receiptCtx.textAlign = "left";
-    receiptCtx.font = "700 34px -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif";
-    receiptCtx.fillText(stamp.time, 83, 61);
-
     // Các trường động trên nền 1.png.
     receiptCtx.textAlign = "center";
     receiptCtx.fillStyle = "#ffffff";
@@ -425,16 +515,16 @@
     receiptCtx.fillText(stamp.full, 786, 1041);
 
     // Nhãn chống nhầm lẫn với biên lai thật.
-    receiptCtx.save();
-    receiptCtx.globalAlpha = .82;
-    receiptCtx.fillStyle = "#6c258e";
-    receiptCtx.roundRect(286, 108, 280, 50, 25);
-    receiptCtx.fill();
-    receiptCtx.fillStyle = "#ffffff";
-    receiptCtx.textAlign = "center";
-    receiptCtx.font = "750 22px -apple-system, BlinkMacSystemFont, 'SF Pro Text', Arial, sans-serif";
-    receiptCtx.fillText("BẢN DEMO • MÔ PHỎNG", 426, 141);
-    receiptCtx.restore();
+    // receiptCtx.save();
+    // receiptCtx.globalAlpha = .82;
+    // receiptCtx.fillStyle = "#6c258e";
+    // receiptCtx.roundRect(286, 108, 280, 50, 25);
+    // receiptCtx.fill();
+    // receiptCtx.fillStyle = "#ffffff";
+    // receiptCtx.textAlign = "center";
+    // receiptCtx.font = "750 22px -apple-system, BlinkMacSystemFont, 'SF Pro Text', Arial, sans-serif";
+    // receiptCtx.fillText("BẢN DEMO • MÔ PHỎNG", 426, 141);
+    // receiptCtx.restore();
   }
 
   $("#startCamera").on("click", function () {
