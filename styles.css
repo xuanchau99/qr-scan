@@ -117,7 +117,6 @@ h1 { margin: 0; font-size: clamp(28px, 8vw, 38px); letter-spacing: -.035em; }
 .status { min-height: 24px; margin: 15px 4px 10px; color: var(--muted); font-size: 14px; text-align: center; }
 .status.error { color: var(--danger); }
 .scan-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.scan-actions .ghost { grid-column: 1 / -1; }
 
 .button {
   display: inline-flex;
@@ -246,16 +245,45 @@ h1 { margin: 0; font-size: clamp(28px, 8vw, 38px); letter-spacing: -.035em; }
 .quick-amounts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 16px; }
 .quick-amounts button { min-height: 38px; border: 1px solid rgba(176, 98, 255, .25); border-radius: 12px; color: #d9b5ff; background: rgba(133, 57, 210, .1); cursor: pointer; }
 
-.receipt-screen { padding: 0; background: #07030c; }
-.receipt-wrap { line-height: 0; }
-#receiptCanvas { display: block; width: 100%; height: auto; background: #07030c; }
-.receipt-actions { display: grid; grid-template-columns: 1fr 1.25fr; gap: 10px; padding: 14px 16px max(18px, env(safe-area-inset-bottom)); background: #07030c; }
+.receipt-screen {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #07030c;
+}
+.receipt-screen.active { display: flex; flex-direction: column; }
+.receipt-wrap {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+  line-height: 0;
+}
+#receiptCanvas {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  background: #07030c;
+}
+.receipt-actions {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 10px;
+  padding: 10px 16px max(12px, env(safe-area-inset-bottom));
+  background: #07030c;
+}
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 
 @media (max-width: 390px) {
   .screen { padding-left: 14px; padding-right: 14px; }
   .scan-actions { grid-template-columns: 1fr; }
-  .scan-actions .ghost { grid-column: auto; }
   .recipient-card { padding: 18px; }
   .bank-logo { flex-basis: 58px; width: 58px; height: 58px; border-radius: 17px; }
 }

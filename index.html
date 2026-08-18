@@ -32,8 +32,7 @@
         <p id="scanStatus" class="status" role="status">Sẵn sàng quét mã QR</p>
         <div class="scan-actions">
           <button id="startCamera" class="button primary" type="button">Mở camera</button>
-          <button id="useSample" class="button secondary" type="button">Dùng QR mẫu</button>
-          <label class="button ghost" for="qrFile">Chọn ảnh QR</label>
+          <label class="button secondary" for="qrFile">Chọn ảnh QR</label>
           <input id="qrFile" type="file" accept="image/*" capture="environment" hidden>
         </div>
       </div>
@@ -89,7 +88,7 @@
     <section id="receiptScreen" class="screen receipt-screen" aria-labelledby="receiptTitle">
       <h1 id="receiptTitle" class="sr-only">Kết quả mô phỏng</h1>
       <div class="receipt-wrap">
-        <canvas id="receiptCanvas" width="852" height="1847" aria-label="Biên lai mô phỏng"></canvas>
+        <canvas id="receiptCanvas" width="852" height="1743" aria-label="Biên lai mô phỏng"></canvas>
       </div>
       <div class="receipt-actions">
         <button id="downloadReceipt" class="button secondary" type="button">Trang chủ</button>

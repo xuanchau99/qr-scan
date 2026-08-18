@@ -496,6 +496,8 @@
     const recipient = state.recipient;
     const now = state.receiptTime;
     const stamp = dateParts(now);
+    receiptCanvas.width = receiptBackground.naturalWidth;
+    receiptCanvas.height = receiptBackground.naturalHeight;
     const w = receiptCanvas.width;
     const officialBankLogo = await loadBankLogo(recipient.bank);
 
@@ -503,30 +505,25 @@
     receiptCtx.drawImage(receiptBackground, 0, 0, receiptCanvas.width, receiptCanvas.height);
     receiptCtx.textBaseline = "alphabetic";
 
-    // 1.png đặt hai nhãn chi tiết cao hơn ảnh tham chiếu. Sao chép vùng
-    // nền trống lân cận để xóa chúng, sau đó vẽ lại đúng vị trí của 2.png.
-    receiptCtx.drawImage(receiptBackground, 205, 880, 145, 48, 55, 880, 145, 48);
-    receiptCtx.drawImage(receiptBackground, 330, 938, 270, 54, 55, 938, 270, 54);
-
     // Các trường động trên nền 1.png.
     receiptCtx.textAlign = "center";
     receiptCtx.fillStyle = "#ffffff";
-    fitText(receiptCtx, formatMoney(state.amount), 690, 58, 400);
-    receiptCtx.fillText(formatMoney(state.amount), w / 2, 709);
+    fitText(receiptCtx, formatMoney(state.amount), 620, 52, 400);
+    receiptCtx.fillText(formatMoney(state.amount), w / 2, 600);
 
     const name = (recipient.name || "NGƯỜI NHẬN").toUpperCase();
     receiptCtx.fillStyle = "#a23ed8";
-    fitText(receiptCtx, name, 680, 32, 650);
-    receiptCtx.fillText(name, w / 2, 815);
+    fitText(receiptCtx, name, 620, 28, 650, 18);
+    receiptCtx.fillText(name, w / 2, 680);
 
-    // Hàng ngân hàng được đặt theo đúng tỷ lệ từ file 2.png.
-    drawBankLogo(receiptCtx, recipient.bank, 239, 867, officialBankLogo);
+    // Hàng ngân hàng nằm gọn phía trên hai nhãn có sẵn trong ảnh nền.
+    drawBankLogo(receiptCtx, recipient.bank, 239, 725, officialBankLogo);
     receiptCtx.textAlign = "left";
     receiptCtx.fillStyle = "#ffffff";
     const bankCode = recipient.bank.code.toUpperCase();
     const bankTextX = 273;
-    fitText(receiptCtx, bankCode, 175, 29, 700, 16);
-    receiptCtx.fillText(bankCode, bankTextX, 877);
+    fitText(receiptCtx, bankCode, 175, 26, 700, 15);
+    receiptCtx.fillText(bankCode, bankTextX, 735);
 
     // Tên ngân hàng có độ dài khác nhau; đặt vạch ngăn theo chiều rộng thực tế.
     const bankTextWidth = receiptCtx.measureText(bankCode).width;
@@ -535,32 +532,24 @@
     receiptCtx.strokeStyle = "rgba(178, 146, 194, .42)";
     receiptCtx.lineWidth = 2;
     receiptCtx.beginPath();
-    receiptCtx.moveTo(dividerX, 849);
-    receiptCtx.lineTo(dividerX, 886);
+    receiptCtx.moveTo(dividerX, 707);
+    receiptCtx.lineTo(dividerX, 744);
     receiptCtx.stroke();
 
     const formattedAccount = formatAccount(recipient.account);
     const accountTextX = dividerX + 24;
     receiptCtx.fillStyle = "#ffffff";
-    fitText(receiptCtx, formattedAccount, 786 - accountTextX, 29, 450);
-    receiptCtx.fillText(formattedAccount, accountTextX, 878);
-
-    // Hai hàng chi tiết dùng đúng lề, baseline và cỡ chữ từ file 2.png.
-    receiptCtx.textAlign = "left";
-    receiptCtx.fillStyle = "#9e97a7";
-    receiptCtx.font = "400 29px -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif";
-    receiptCtx.fillText("Lời nhắn:", 64, 984);
-    receiptCtx.fillStyle = "#777180";
-    receiptCtx.fillText("Chuyển nhanh 247:", 64, 1041);
+    fitText(receiptCtx, formattedAccount, 786 - accountTextX, 26, 450, 16);
+    receiptCtx.fillText(formattedAccount, accountTextX, 735);
 
     receiptCtx.fillStyle = "#ffffff";
     receiptCtx.textAlign = "right";
-    receiptCtx.font = "500 29px -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif";
-    receiptCtx.fillText("Chuyen khoan qua QR", 786, 984);
+    receiptCtx.font = "500 26px -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif";
+    receiptCtx.fillText("Chuyen khoan qua QR", 786, 812);
 
     receiptCtx.textAlign = "right";
-    receiptCtx.font = "600 28px -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif";
-    receiptCtx.fillText(stamp.full, 786, 1041);
+    receiptCtx.font = "600 25px -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif";
+    receiptCtx.fillText(stamp.full, 786, 872);
 
     // Nhãn chống nhầm lẫn với biên lai thật.
     // receiptCtx.save();
@@ -582,11 +571,6 @@
     } else {
       startCamera();
     }
-  });
-
-  $("#useSample").on("click", function () {
-    setStatus("Đang đọc qr-sample.png…");
-    loadQrImage("qr-sample.png", false);
   });
 
   $("#qrFile").on("change", function () {
