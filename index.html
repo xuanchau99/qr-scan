@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10051b">
+  <title>VietQR Scanner Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section id="scanScreen" class="screen active" aria-labelledby="scanTitle">
+      <header class="page-header">
+        <span class="eyebrow">VietQR Demo</span>
+        <h1 id="scanTitle">Quét mã chuyển khoản</h1>
+        <p>Đưa mã QR vào giữa khung hình hoặc dùng ảnh QR mẫu có sẵn.</p>
+      </header>
+
+      <div class="scanner-card">
+        <div id="cameraFrame" class="camera-frame">
+          <video id="camera" playsinline muted></video>
+          <div class="camera-placeholder">
+            <span class="qr-glyph" aria-hidden="true"></span>
+            <strong>Camera chưa bật</strong>
+            <small>Camera chỉ hoạt động trên HTTPS hoặc localhost</small>
+          </div>
+          <div class="scan-guide" aria-hidden="true">
+            <i></i><i></i><i></i><i></i>
+            <span></span>
+          </div>
+        </div>
+        <p id="scanStatus" class="status" role="status">Sẵn sàng quét mã QR</p>
+        <div class="scan-actions">
+          <button id="startCamera" class="button primary" type="button">Mở camera</button>
+          <button id="useSample" class="button secondary" type="button">Dùng QR mẫu</button>
+          <label class="button ghost" for="qrFile">Chọn ảnh QR</label>
+          <input id="qrFile" type="file" accept="image/*" capture="environment" hidden>
+        </div>
+      </div>
+
+      <div class="demo-note">
+        <strong>Lưu ý:</strong> Đây là bản mô phỏng giao diện, không kết nối ngân hàng và không chuyển tiền thật.
+      </div>
+    </section>
+
+    <section id="confirmScreen" class="screen" aria-labelledby="confirmTitle">
+      <header class="page-header compact">
+        <button class="back-button" id="backToScan" type="button" aria-label="Quay lại">‹</button>
+        <span class="eyebrow">Xác nhận người nhận</span>
+        <h1 id="confirmTitle">Thông tin chuyển khoản</h1>
+      </header>
+
+      <div class="recipient-card">
+        <div id="bankLogo" class="bank-logo" aria-hidden="true">
+          <img id="bankLogoImage" alt="" referrerpolicy="no-referrer">
+          <span></span>
+        </div>
+        <div class="recipient-copy">
+          <span>Người nhận</span>
+          <strong id="recipientName">—</strong>
+          <p id="bankName">—</p>
+          <p id="accountNumber" class="account-number">—</p>
+        </div>
+      </div>
+
+      <form id="amountForm" class="amount-card">
+        <label for="amount">Số tiền</label>
+        <div class="money-input">
+          <input id="amount" inputmode="numeric" autocomplete="off" placeholder="0" aria-describedby="amountHint">
+          <span>VND</span>
+        </div>
+        <small id="amountHint">Nhập số tiền lớn hơn 0</small>
+        <div class="quick-amounts">
+          <button type="button" data-amount="50000">50.000</button>
+          <button type="button" data-amount="100000">100.000</button>
+          <button type="button" data-amount="200000">200.000</button>
+          <button type="button" data-amount="500000">500.000</button>
+        </div>
+        <button id="confirmTransfer" class="button primary full" type="submit" disabled>OK</button>
+      </form>
+    </section>
+
+    <section id="receiptScreen" class="screen receipt-screen" aria-labelledby="receiptTitle">
+      <h1 id="receiptTitle" class="sr-only">Kết quả mô phỏng</h1>
+      <div class="receipt-wrap">
+        <canvas id="receiptCanvas" width="852" height="1847" aria-label="Biên lai mô phỏng"></canvas>
+      </div>
+      <div class="receipt-actions">
+        <button id="downloadReceipt" class="button secondary" type="button">Tải ảnh demo</button>
+        <button id="newTransfer" class="button primary" type="button">Giao dịch khác</button>
+      </div>
+    </section>
+  </main>
+
+  <canvas id="scanCanvas" hidden></canvas>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
