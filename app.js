@@ -316,13 +316,19 @@
       setStatus("Trình duyệt không hỗ trợ camera. Hãy chọn một ảnh QR.", true);
       return;
     }
-    stopCamera();
-    setStatus("Đang yêu cầu quyền camera…");
+    setStatus("Đang mở camera…");
     try {
-      state.stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 1280 } },
-        audio: false
-      });
+      const reusableStream = state.stream
+        && state.stream.getVideoTracks().some((track) => track.readyState === "live");
+
+      if (!reusableStream) {
+        state.stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 1280 } },
+          audio: false
+        });
+      }
+
+      state.stream.getVideoTracks().forEach((track) => { track.enabled = true; });
       video.srcObject = state.stream;
       await video.play();
       state.scanning = true;
@@ -331,15 +337,23 @@
       setStatus("Đưa toàn bộ mã QR vào trong khung");
       requestAnimationFrame(scanVideoFrame);
     } catch (error) {
+      stopCamera(true);
       setStatus("Không mở được camera. Hãy cấp quyền hoặc chọn ảnh QR.", true);
     }
   }
 
-  function stopCamera() {
+  function stopCamera(releaseStream = false) {
     state.scanning = false;
-    if (state.stream) state.stream.getTracks().forEach((track) => track.stop());
-    state.stream = null;
-    video.srcObject = null;
+    video.pause();
+    if (state.stream) {
+      if (releaseStream) {
+        state.stream.getTracks().forEach((track) => track.stop());
+        state.stream = null;
+        video.srcObject = null;
+      } else {
+        state.stream.getVideoTracks().forEach((track) => { track.enabled = false; });
+      }
+    }
     $("#cameraFrame").removeClass("streaming");
     $("#startCamera").text("Mở camera");
   }
@@ -633,5 +647,5 @@
     showScreen("#scanScreen");
   });
 
-  window.addEventListener("pagehide", stopCamera);
+  window.addEventListener("pagehide", () => stopCamera(true));
 })(jQuery);
