@@ -275,9 +275,9 @@
     const scale = Math.min(options.maxScale, options.maxSide / Math.max(sourceWidth, sourceHeight));
     scanCanvas.width = Math.max(1, Math.round(sourceWidth * scale));
     scanCanvas.height = Math.max(1, Math.round(sourceHeight * scale));
-    scanCtx.save();
     scanCtx.clearRect(0, 0, scanCanvas.width, scanCanvas.height);
-    scanCtx.filter = options.contrast ? "grayscale(1) contrast(1.8)" : "none";
+    scanCtx.imageSmoothingEnabled = true;
+    scanCtx.imageSmoothingQuality = "high";
     scanCtx.drawImage(
       source,
       sourceX,
@@ -289,42 +289,64 @@
       scanCanvas.width,
       scanCanvas.height
     );
-    scanCtx.restore();
     const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+    if (options.contrast) {
+      const pixels = imageData.data;
+      for (let offset = 0; offset < pixels.length; offset += 4) {
+        const gray = (pixels[offset] * 77 + pixels[offset + 1] * 150 + pixels[offset + 2] * 29) >> 8;
+        const enhanced = Math.max(0, Math.min(255, Math.round((gray - 128) * 1.8 + 128)));
+        pixels[offset] = enhanced;
+        pixels[offset + 1] = enhanced;
+        pixels[offset + 2] = enhanced;
+      }
+    }
     return window.jsQR(imageData.data, imageData.width, imageData.height, {
       inversionAttempts: "attemptBoth"
     });
+  }
+
+  async function decodeWithNativeBarcodeDetector(source) {
+    if (typeof window.BarcodeDetector !== "function") return null;
+    try {
+      const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
+      const codes = await detector.detect(source);
+      const qrCode = codes.find((code) => code.rawValue);
+      return qrCode ? { data: qrCode.rawValue } : null;
+    } catch (error) {
+      return null;
+    }
   }
 
   async function decodeStillImage(source, width, height) {
     if (typeof window.jsQR !== "function") {
       throw new Error("Không tải được thư viện đọc QR. Hãy kiểm tra kết nối mạng.");
     }
+    const nativeResult = await decodeWithNativeBarcodeDetector(source);
+    if (nativeResult) return nativeResult;
+
     const full = { x: 0, y: 0, width: 1, height: 1 };
     const center = { x: 0.15, y: 0.2, width: 0.7, height: 0.62 };
     const wideCenter = { x: 0.08, y: 0.12, width: 0.84, height: 0.72 };
     const tightCenter = { x: 0.22, y: 0.27, width: 0.56, height: 0.48 };
     const attempts = [
-      { crop: full, contrast: false },
-      { crop: full, contrast: true },
-      { crop: center, contrast: false },
-      { crop: center, contrast: true },
-      { crop: wideCenter, contrast: false },
-      { crop: wideCenter, contrast: true },
-      { crop: tightCenter, contrast: false },
-      { crop: tightCenter, contrast: true }
+      { crop: full, contrast: false, maxSide: 2200, maxScale: 1 },
+      { crop: full, contrast: false, maxSide: 1800, maxScale: 1 },
+      { crop: full, contrast: true, maxSide: 1800, maxScale: 1 },
+      { crop: center, contrast: false, maxSide: 1800, maxScale: 2 },
+      { crop: center, contrast: true, maxSide: 1800, maxScale: 2 },
+      { crop: wideCenter, contrast: false, maxSide: 1800, maxScale: 2 },
+      { crop: wideCenter, contrast: true, maxSide: 1800, maxScale: 2 },
+      { crop: tightCenter, contrast: false, maxSide: 1800, maxScale: 2 },
+      { crop: tightCenter, contrast: true, maxSide: 1800, maxScale: 2 },
+      { crop: full, contrast: false, maxSide: 1400, maxScale: 1 }
     ];
 
     for (let index = 0; index < attempts.length; index += 1) {
       if (index > 0) {
         setStatus(`Đang tối ưu ảnh QR… ${index + 1}/${attempts.length}`);
-        await new Promise((resolve) => requestAnimationFrame(resolve));
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
-      const result = decodeQrCandidate(source, width, height, {
-        ...attempts[index],
-        maxSide: 1800,
-        maxScale: 2
-      });
+      const result = decodeQrCandidate(source, width, height, attempts[index]);
       if (result) return result;
     }
     return null;
