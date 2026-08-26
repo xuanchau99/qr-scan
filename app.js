@@ -9,6 +9,8 @@
     "970407": { code: "Techcombank", name: "Ngân hàng TMCP Kỹ thương Việt Nam", css: "tcb", logo: "https://cdn.vietqr.io/img/TCB.png" },
     "970415": { code: "VietinBank", name: "Ngân hàng TMCP Công thương Việt Nam", css: "generic", logo: "https://cdn.vietqr.io/img/ICB.png" },
     "970432": { code: "VPBank", name: "Ngân hàng TMCP Việt Nam Thịnh Vượng", css: "generic", logo: "https://cdn.vietqr.io/img/VPB.png" },
+    "970440": { code: "SeABank", name: "Ngân hàng TMCP Đông Nam Á", css: "generic", logo: "https://cdn.vietqr.io/img/SEAB.png" },
+    "970431": { code: "Eximbank", name: "Ngân hàng TMCP Xuất Nhập khẩu Việt Nam", css: "generic", logo: "https://cdn.vietqr.io/img/EIB.png" },
     "970403": { code: "Sacombank", name: "Ngân hàng TMCP Sài Gòn Thương Tín", css: "generic", logo: "https://cdn.vietqr.io/img/STB.png" },
     "970416": { code: "ACB", name: "Ngân hàng TMCP Á Châu", css: "generic", logo: "https://cdn.vietqr.io/img/ACB.png" },
     "970405": { code: "Agribank", name: "Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam", css: "generic", logo: "https://cdn.vietqr.io/img/VBA.png" }
@@ -110,6 +112,36 @@
     return {};
   }
 
+  function findEmvProvider(root, guid) {
+    for (let id = 26; id <= 51; id += 1) {
+      const value = root[String(id).padStart(2, "0")];
+      if (!value) continue;
+      const provider = parseTlv(value);
+      if (provider["00"] === guid || value.includes(guid)) return provider;
+    }
+    return null;
+  }
+
+  function parseVnpayMerchant(root, raw) {
+    const provider = findEmvProvider(root, "A000000775");
+    if (!provider) return null;
+    const merchantId = provider["01"] || provider["02"] || "VNPAY";
+    const amount = Number(String(root["54"] || "").replace(/[^\d.]/g, ""));
+    return {
+      name: titleCaseName(root["59"]),
+      account: merchantId,
+      bankBin: "VNPAY",
+      bank: {
+        code: "VNPAY QR",
+        name: "Cổng thanh toán VNPAY",
+        css: "generic"
+      },
+      amount: Number.isFinite(amount) && amount > 0 ? Math.round(amount) : 0,
+      raw,
+      source: "vnpay-merchant"
+    };
+  }
+
   function momoBank() {
     return BANKS["971025"] || {
       code: "MoMo",
@@ -182,7 +214,10 @@
     const momo = parseMomoPayload(payload);
     if (momo) return momo;
 
-    const root = parseTlv(String(payload || "").trim());
+    const raw = String(payload || "").trim();
+    const root = parseTlv(raw);
+    const vnpayMerchant = parseVnpayMerchant(root, raw);
+    if (vnpayMerchant) return vnpayMerchant;
     const provider = findVietQrProvider(root);
     const service = parseTlv(provider["01"] || "");
     let bankBin = service["00"] || "";
@@ -223,15 +258,76 @@
     if (typeof window.jsQR !== "function") {
       throw new Error("Không tải được thư viện đọc QR. Hãy kiểm tra kết nối mạng.");
     }
-    const maxSide = 1600;
-    const scale = Math.min(1, maxSide / Math.max(width, height));
-    scanCanvas.width = Math.max(1, Math.round(width * scale));
-    scanCanvas.height = Math.max(1, Math.round(height * scale));
-    scanCtx.drawImage(source, 0, 0, scanCanvas.width, scanCanvas.height);
+    return decodeQrCandidate(source, width, height, {
+      crop: { x: 0, y: 0, width: 1, height: 1 },
+      maxSide: 1600,
+      maxScale: 1,
+      contrast: false
+    });
+  }
+
+  function decodeQrCandidate(source, width, height, options) {
+    const crop = options.crop;
+    const sourceX = Math.max(0, Math.round(width * crop.x));
+    const sourceY = Math.max(0, Math.round(height * crop.y));
+    const sourceWidth = Math.max(1, Math.min(width - sourceX, Math.round(width * crop.width)));
+    const sourceHeight = Math.max(1, Math.min(height - sourceY, Math.round(height * crop.height)));
+    const scale = Math.min(options.maxScale, options.maxSide / Math.max(sourceWidth, sourceHeight));
+    scanCanvas.width = Math.max(1, Math.round(sourceWidth * scale));
+    scanCanvas.height = Math.max(1, Math.round(sourceHeight * scale));
+    scanCtx.save();
+    scanCtx.clearRect(0, 0, scanCanvas.width, scanCanvas.height);
+    scanCtx.filter = options.contrast ? "grayscale(1) contrast(1.8)" : "none";
+    scanCtx.drawImage(
+      source,
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+      0,
+      0,
+      scanCanvas.width,
+      scanCanvas.height
+    );
+    scanCtx.restore();
     const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
     return window.jsQR(imageData.data, imageData.width, imageData.height, {
       inversionAttempts: "attemptBoth"
     });
+  }
+
+  async function decodeStillImage(source, width, height) {
+    if (typeof window.jsQR !== "function") {
+      throw new Error("Không tải được thư viện đọc QR. Hãy kiểm tra kết nối mạng.");
+    }
+    const full = { x: 0, y: 0, width: 1, height: 1 };
+    const center = { x: 0.15, y: 0.2, width: 0.7, height: 0.62 };
+    const wideCenter = { x: 0.08, y: 0.12, width: 0.84, height: 0.72 };
+    const tightCenter = { x: 0.22, y: 0.27, width: 0.56, height: 0.48 };
+    const attempts = [
+      { crop: full, contrast: false },
+      { crop: full, contrast: true },
+      { crop: center, contrast: false },
+      { crop: center, contrast: true },
+      { crop: wideCenter, contrast: false },
+      { crop: wideCenter, contrast: true },
+      { crop: tightCenter, contrast: false },
+      { crop: tightCenter, contrast: true }
+    ];
+
+    for (let index = 0; index < attempts.length; index += 1) {
+      if (index > 0) {
+        setStatus(`Đang tối ưu ảnh QR… ${index + 1}/${attempts.length}`);
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
+      const result = decodeQrCandidate(source, width, height, {
+        ...attempts[index],
+        maxSide: 1800,
+        maxScale: 2
+      });
+      if (result) return result;
+    }
+    return null;
   }
 
   function extractRecipientNameFromText(text) {
@@ -385,8 +481,8 @@
     const image = new Image();
     image.onload = async function () {
       try {
-        const result = decodeImageSource(image, image.naturalWidth, image.naturalHeight);
-        await processQrResult(result, scanCanvas);
+        const result = await decodeStillImage(image, image.naturalWidth, image.naturalHeight);
+        await processQrResult(result, image);
       } catch (error) {
         setStatus(error.message, true);
       } finally {
