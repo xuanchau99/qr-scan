@@ -391,8 +391,13 @@
     state.recipient = recipient;
     const hasQrName = Boolean(recipient.name);
     $("#recipientName").text(hasQrName ? recipient.name : "CHƯA CÓ TÊN NGƯỜI NHẬN");
-    $("#recipientNameEditor").prop("hidden", hasQrName);
-    $("#manualRecipientName").val("");
+    $("#recipientNameEditor").prop("hidden", false);
+    $("#manualRecipientName").val(recipient.name || "");
+    $("#recipientNameHint").text(
+      hasQrName
+        ? "Tên tự động điền từ QR. Bạn có thể chỉnh sửa nếu cần."
+        : "QR không chứa tên. Vui lòng nhập tên người nhận."
+    );
     $("#bankName").text(recipient.bank.code);
     $("#accountNumber").text(recipient.account);
     $("#bankLogo")
@@ -733,6 +738,10 @@
     $("#recipientName").text(name || "CHƯA CÓ TÊN NGƯỜI NHẬN");
   });
 
+  $("#recipientName").on("click", function () {
+    $("#manualRecipientName").trigger("focus").select();
+  });
+
   $("#amountForm").on("submit", async function (event) {
     event.preventDefault();
     const amount = Number(digitsOnly($("#amount").val()));
@@ -759,6 +768,8 @@
     state.amount = 0;
     state.receiptTime = null;
     $("#amount").val("");
+    $("#manualRecipientName").val("");
+    $("#recipientName").text("—");
     $("#confirmTransfer").prop("disabled", true);
     $("#amountHint").text("Nhập số tiền lớn hơn 0").removeClass("error");
     setStatus("Sẵn sàng quét mã QR");

@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="vi">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,6 +8,7 @@
   <title>VietQR Scanner Demo</title>
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
   <main class="app-shell">
     <section id="scanScreen" class="screen active" aria-labelledby="scanTitle">
@@ -62,10 +64,10 @@
         </div>
       </div>
 
-      <div id="recipientNameEditor" class="recipient-name-editor" hidden>
-        <label for="manualRecipientName">Tên người nhận hiển thị</label>
+      <div id="recipientNameEditor" class="recipient-name-editor">
+        <label for="manualRecipientName">Tên người nhận (Chỉnh sửa tên tài khoản)</label>
         <input id="manualRecipientName" type="text" autocomplete="off" maxlength="80" placeholder="Nhập tên người nhận">
-        <small>QR này không chứa tên. Tên bạn nhập chỉ dùng để hiển thị.</small>
+        <small id="recipientNameHint">Tên tự động đọc từ QR. Bạn có thể chỉnh sửa nếu cần.</small>
       </div>
 
       <form id="amountForm" class="amount-card">
@@ -104,4 +106,5 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@6/dist/tesseract.min.js"></script>
   <script src="app.js?v=20260826-mobile-qr"></script>
 </body>
+
 </html>
