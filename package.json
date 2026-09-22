@@ -1,0 +1,18 @@
+{
+  "name": "scan-qr",
+  "version": "1.0.0",
+  "description": "Prototype HTML/CSS/JavaScript/jQuery",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  },
+  "devDependencies": {
+    "vite": "^5.4.5"
+  }
+}

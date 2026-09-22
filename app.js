@@ -1,3 +1,5 @@
+import { supabase } from './src/supabase.js';
+
 (function ($) {
   "use strict";
 
@@ -751,6 +753,21 @@
     }
     state.amount = amount;
     state.receiptTime = new Date();
+
+    try {
+      if (supabase) {
+        const { error } = await supabase.from('scanned_qrs').insert([{
+          account_number: state.recipient.account,
+          recipient_name: state.recipient.name,
+          bank_name: state.recipient.bank.code,
+          bank_logo: state.recipient.bank.logo || state.recipient.bank.icon || ""
+        }]);
+        if (error) console.error("Lỗi khi lưu QR:", error);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+
     await renderReceipt();
     showScreen("#receiptScreen");
   });
@@ -773,6 +790,74 @@
     $("#confirmTransfer").prop("disabled", true);
     $("#amountHint").text("Nhập số tiền lớn hơn 0").removeClass("error");
     setStatus("Sẵn sàng quét mã QR");
+    showScreen("#scanScreen");
+  });
+
+  async function renderHistoryList() {
+    const listContainer = $("#historyList");
+    listContainer.html('<p class="status">Đang tải...</p>');
+    
+    try {
+      const { data, error } = await supabase
+        .from('scanned_qrs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+        
+      if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        listContainer.html('<p class="status">Chưa có mã QR nào được lưu.</p>');
+        return;
+      }
+      
+      listContainer.empty();
+      data.forEach(item => {
+        const hasImage = item.bank_logo ? "has-image" : "";
+        const logoContent = item.bank_logo ? `<img src="${item.bank_logo}" alt="Logo">` : `<span>${item.bank_name.slice(0, 4)}</span>`;
+        
+        const itemHtml = $(`
+          <div class="history-item">
+            <div class="bank-logo ${hasImage}">
+              ${logoContent}
+            </div>
+            <div class="recipient-copy">
+              <strong>${item.recipient_name}</strong>
+              <p>${item.bank_name}</p>
+              <p class="account-number">${item.account_number}</p>
+            </div>
+          </div>
+        `);
+        
+        itemHtml.on("click", function() {
+           const bankBin = Object.keys(BANKS).find(bin => BANKS[bin].code === item.bank_name) || "0";
+           const recipient = {
+             name: item.recipient_name,
+             account: item.account_number,
+             bankBin: bankBin,
+             bank: BANKS[bankBin] || { code: item.bank_name, name: item.bank_name, css: "generic", logo: item.bank_logo, icon: item.bank_logo },
+             amount: 0,
+             raw: ""
+           };
+           applyRecipient(recipient);
+        });
+        
+        listContainer.append(itemHtml);
+      });
+      
+    } catch (err) {
+      console.error(err);
+      listContainer.html('<p class="status error">Lỗi khi tải dữ liệu.</p>');
+    }
+  }
+
+  $("#openHistory").on("click", function() {
+    stopCamera();
+    showScreen("#historyScreen");
+    renderHistoryList();
+  });
+  
+  $("#backFromHistory").on("click", function() {
     showScreen("#scanScreen");
   });
 

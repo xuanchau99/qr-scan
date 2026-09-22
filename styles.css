@@ -613,3 +613,50 @@ h1 {
     animation-iteration-count: 1 !important;
   }
 }
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+  padding-bottom: 20px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 20px;
+  background: rgba(29, 18, 41, .88);
+  cursor: pointer;
+  transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+}
+
+.history-item:hover, .history-item:active {
+  background: rgba(43, 27, 61, .9);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+}
+
+.history-item .bank-logo {
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+}
+
+.history-item .bank-logo span {
+  font-size: 14px;
+}
+
+.history-item .recipient-copy {
+  flex: 1;
+}
+
+.history-item .recipient-copy strong {
+  margin: 0 0 4px;
+  font-size: 16px;
+  color: #fff;
+}

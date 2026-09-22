@@ -36,6 +36,7 @@
           <button id="startCamera" class="button primary" type="button">Mở camera</button>
           <label class="button secondary" for="qrFile">Chọn ảnh QR</label>
           <input id="qrFile" type="file" accept="image/*" hidden>
+          <button id="openHistory" class="button ghost" style="grid-column: span 2; margin-top: 0" type="button">Lịch sử quét QR</button>
         </div>
       </div>
 
@@ -87,6 +88,17 @@
       </form>
     </section>
 
+    <section id="historyScreen" class="screen" aria-labelledby="historyTitle">
+      <header class="page-header compact">
+        <button class="back-button" id="backFromHistory" type="button" aria-label="Quay lại">‹</button>
+        <span class="eyebrow">Danh bạ</span>
+        <h1 id="historyTitle">Lịch sử quét QR</h1>
+      </header>
+      <div id="historyList" class="history-list">
+        <p class="status">Đang tải...</p>
+      </div>
+    </section>
+
     <section id="receiptScreen" class="screen receipt-screen" aria-labelledby="receiptTitle">
       <h1 id="receiptTitle" class="sr-only">Kết quả mô phỏng</h1>
       <div class="receipt-wrap">
@@ -104,7 +116,7 @@
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@6/dist/tesseract.min.js"></script>
-  <script src="app.js?v=20260826-mobile-qr"></script>
+  <script type="module" src="./app.js"></script>
 </body>
 
 </html>
