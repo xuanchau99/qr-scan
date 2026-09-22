@@ -432,6 +432,26 @@ import { supabase } from './src/supabase.js';
     if (!result || !result.data) throw new Error("Không tìm thấy mã QR trong ảnh.");
     await bankCatalogReady;
     const recipient = parseVietQr(result.data);
+
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('scanned_qrs')
+          .select('recipient_name')
+          .eq('account_number', recipient.account)
+          .eq('bank_name', recipient.bank.code)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+          
+        if (data && data.recipient_name) {
+          recipient.name = data.recipient_name;
+        }
+      } catch (err) {
+        // Ignore if not found
+      }
+    }
+
     if (!recipient.name && ocrSource) recipient.name = await readRecipientNameWithOcr(ocrSource);
     applyRecipient(recipient);
   }
