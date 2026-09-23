@@ -428,6 +428,104 @@ import { supabase } from './src/supabase.js';
     setTimeout(() => $(hasQrName ? "#amount" : "#manualRecipientName").trigger("focus"), 120);
   }
 
+  function recipientFromSavedAccount(item) {
+    const bankBin = Object.keys(BANKS).find((bin) => BANKS[bin].code === item.bank_name) || "";
+    const savedLogo = item.bank_logo || "";
+    return {
+      name: item.recipient_name || "",
+      account: item.account_number || "",
+      bankBin,
+      bank: BANKS[bankBin] || {
+        code: item.bank_name || "Ngân hàng",
+        name: item.bank_name || "Ngân hàng",
+        css: "generic",
+        logo: savedLogo,
+        icon: savedLogo
+      },
+      amount: 0,
+      raw: ""
+    };
+  }
+
+  function showSavedSearchMessage(message) {
+    $("#savedTransferResults").empty().append($("<p>", {
+      class: "saved-transfer-message",
+      text: message
+    }));
+  }
+
+  function renderSavedSearchResults(accounts) {
+    const results = $("#savedTransferResults").empty();
+    if (!accounts.length) {
+      showSavedSearchMessage("Không tìm thấy tài khoản đã lưu phù hợp.");
+      return;
+    }
+
+    accounts.forEach((item) => {
+      const recipient = recipientFromSavedAccount(item);
+      const bankVisual = recipient.bank.icon || recipient.bank.logo || item.bank_logo;
+      const logo = $("<div>", { class: "bank-logo" }).append($("<span>").attr("data-code", recipient.bank.code.slice(0, 5).toUpperCase()));
+      if (bankVisual) {
+        logo.addClass("has-image").append($("<img>", { src: bankVisual, alt: "" }));
+      } else {
+        logo.addClass(recipient.bank.css);
+      }
+      const button = $("<button>", { type: "button", class: "saved-transfer-result" })
+        .append(logo)
+        .append(
+          $("<span>", { class: "saved-transfer-result-copy" })
+            .append($("<strong>", { text: recipient.name || "Chưa có tên người nhận" }))
+            .append($("<span>", { text: `${recipient.bank.code} • ${recipient.account}` }))
+        );
+      button.on("click", () => applyRecipient(recipient));
+      results.append(button);
+    });
+  }
+
+  let savedSearchTimer;
+  let savedSearchRequest = 0;
+  async function searchSavedAccounts(value) {
+    const query = String(value || "").trim();
+    const requestId = ++savedSearchRequest;
+    $("#clearSavedTransferSearch").prop("hidden", !query);
+    if (!query) {
+      $("#savedTransferResults").empty();
+      return;
+    }
+    if (!supabase) {
+      showSavedSearchMessage("Chưa thể tải tài khoản đã lưu.");
+      return;
+    }
+
+    showSavedSearchMessage("Đang tìm tài khoản đã lưu…");
+    const safeQuery = query.replace(/[%,()]/g, "");
+    try {
+      const { data, error } = await supabase
+        .from("scanned_qrs")
+        .select("account_number, recipient_name, bank_name, bank_logo, created_at")
+        .or(`recipient_name.ilike.%${safeQuery}%,account_number.ilike.%${safeQuery}%,bank_name.ilike.%${safeQuery}%`)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      if (requestId !== savedSearchRequest) return;
+
+      const uniqueAccounts = [];
+      const seen = new Set();
+      (data || []).forEach((item) => {
+        const key = `${item.bank_name}|${item.account_number}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          uniqueAccounts.push(item);
+        }
+      });
+      renderSavedSearchResults(uniqueAccounts);
+    } catch (error) {
+      if (requestId !== savedSearchRequest) return;
+      console.error("Lỗi tìm tài khoản đã lưu:", error);
+      showSavedSearchMessage("Không thể tìm tài khoản đã lưu. Vui lòng thử lại.");
+    }
+  }
+
   async function processQrResult(result, ocrSource) {
     if (!result || !result.data) throw new Error("Không tìm thấy mã QR trong ảnh.");
     await bankCatalogReady;
@@ -738,6 +836,20 @@ import { supabase } from './src/supabase.js';
     setStatus("Đang đọc ảnh đã chọn…");
     loadQrImage(URL.createObjectURL(file), true);
     this.value = "";
+  });
+
+  $("#savedTransferSearch").on("input", function () {
+    const value = this.value;
+    clearTimeout(savedSearchTimer);
+    savedSearchTimer = setTimeout(() => searchSavedAccounts(value), 250);
+  });
+
+  $("#clearSavedTransferSearch").on("click", function () {
+    clearTimeout(savedSearchTimer);
+    savedSearchRequest += 1;
+    $("#savedTransferSearch").val("").trigger("focus");
+    $(this).prop("hidden", true);
+    $("#savedTransferResults").empty();
   });
 
   $("#amount").on("input", function () {
