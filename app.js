@@ -101,7 +101,7 @@ import { supabase } from './src/supabase.js';
 
   function titleCaseName(name) {
     const clean = String(name || "").replace(/\s+/g, " ").trim();
-    return clean;
+    return clean.toUpperCase();
   }
 
   function findVietQrProvider(root) {
@@ -432,7 +432,7 @@ import { supabase } from './src/supabase.js';
     const bankBin = Object.keys(BANKS).find((bin) => BANKS[bin].code === item.bank_name) || "";
     const savedLogo = item.bank_logo || "";
     return {
-      name: item.recipient_name || "",
+      name: (item.recipient_name || "").toUpperCase(),
       account: item.account_number || "",
       bankBin,
       bank: BANKS[bankBin] || {
@@ -543,7 +543,7 @@ import { supabase } from './src/supabase.js';
           .single();
           
         if (data && data.recipient_name) {
-          recipient.name = data.recipient_name;
+          recipient.name = data.recipient_name.toUpperCase();
         }
       } catch (err) {
         // Ignore if not found
@@ -867,7 +867,7 @@ import { supabase } from './src/supabase.js';
 
   $("#manualRecipientName").on("input", function () {
     if (!state.recipient) return;
-    const name = String(this.value || "").replace(/\s+/g, " ").trim();
+    const name = String(this.value || "").replace(/\s+/g, " ").trim().toUpperCase();
     state.recipient.name = name;
     $("#recipientName").text(name || "CHƯA CÓ TÊN NGƯỜI NHẬN");
   });
