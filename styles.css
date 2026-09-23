@@ -89,6 +89,150 @@ h1 {
   line-height: 1.5;
 }
 
+.saved-transfer-search {
+  margin: 0 0 18px;
+  padding: 17px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 22px;
+  background: rgba(29, 18, 41, .72);
+}
+
+.saved-transfer-search-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.saved-transfer-search h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.saved-transfer-search-heading span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.search-input {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid rgba(195, 133, 255, .28);
+  border-radius: 14px;
+  color: #cda1ff;
+  background: rgba(9, 4, 15, .42);
+}
+
+.search-input:focus-within {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgba(160, 60, 255, .14);
+}
+
+.search-input > span {
+  font-size: 25px;
+  line-height: 1;
+}
+
+.search-input input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+  background: transparent;
+}
+
+.search-input input::placeholder {
+  color: #83798c;
+}
+
+.search-input button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #e7d8f4;
+  background: rgba(255, 255, 255, .12);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.saved-transfer-results {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.saved-transfer-results:empty {
+  display: none;
+}
+
+.saved-transfer-message {
+  margin: 2px 3px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.saved-transfer-result {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 15px;
+  color: inherit;
+  background: rgba(50, 31, 70, .58);
+  text-align: left;
+  cursor: pointer;
+}
+
+.saved-transfer-result:hover,
+.saved-transfer-result:focus-visible {
+  border-color: rgba(195, 133, 255, .5);
+  background: rgba(69, 40, 97, .76);
+  outline: none;
+}
+
+.saved-transfer-result .bank-logo {
+  flex-basis: 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+}
+
+.saved-transfer-result .bank-logo span {
+  font-size: 11px;
+}
+
+.saved-transfer-result-copy {
+  min-width: 0;
+}
+
+.saved-transfer-result-copy strong,
+.saved-transfer-result-copy span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-transfer-result-copy strong {
+  font-size: 15px;
+}
+
+.saved-transfer-result-copy span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .scanner-card,
 .recipient-card,
 .amount-card {

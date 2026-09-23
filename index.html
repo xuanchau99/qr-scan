@@ -18,6 +18,19 @@
         <p>Đưa mã QR vào giữa khung hình hoặc dùng ảnh QR mẫu có sẵn.</p>
       </header>
 
+      <section class="saved-transfer-search" aria-labelledby="savedTransferTitle">
+        <div class="saved-transfer-search-heading">
+          <h2 id="savedTransferTitle">Chuyển khoản đã lưu</h2>
+          <span>Tìm và chọn người nhận</span>
+        </div>
+        <label class="search-input" for="savedTransferSearch">
+          <span aria-hidden="true">⌕</span>
+          <input id="savedTransferSearch" type="search" autocomplete="off" placeholder="Nhập tên, số tài khoản hoặc ngân hàng" aria-controls="savedTransferResults">
+          <button id="clearSavedTransferSearch" type="button" aria-label="Xóa nội dung tìm kiếm" hidden>×</button>
+        </label>
+        <div id="savedTransferResults" class="saved-transfer-results" aria-live="polite"></div>
+      </section>
+
       <div class="scanner-card">
         <div id="cameraFrame" class="camera-frame">
           <video id="camera" playsinline muted></video>
