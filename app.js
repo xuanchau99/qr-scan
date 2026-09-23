@@ -49,6 +49,11 @@ import { supabase } from './src/supabase.js';
           logo: item.logo || "",
           icon: appIcons[bankCode] || ""
         };
+        
+        $("<option>")
+          .val(item.bin)
+          .text(`${item.shortName || item.code} - ${item.name || item.shortName}`)
+          .appendTo("#manualBankSelect");
       });
     }
   });
@@ -836,6 +841,56 @@ import { supabase } from './src/supabase.js';
     setStatus("Đang đọc ảnh đã chọn…");
     loadQrImage(URL.createObjectURL(file), true);
     this.value = "";
+  });
+
+  $("#openManualEntry").on("click", function () {
+    if (state.scanning) stopCamera();
+    $("#manualEntryForm")[0].reset();
+    showScreen("#manualEntryScreen");
+  });
+
+  $("#backFromManualEntry").on("click", function () {
+    showScreen("#scanScreen");
+  });
+
+  $("#manualEntryForm").on("submit", async function (event) {
+    event.preventDefault();
+    const bankBin = $("#manualBankSelect").val();
+    const account = $("#manualAccountNumber").val().trim();
+    let name = $("#manualName").val().trim();
+
+    if (!bankBin || !account) return;
+    const bank = BANKS[bankBin];
+    if (!bank) return;
+
+    if (!name && supabase) {
+      try {
+        const { data } = await supabase
+          .from('scanned_qrs')
+          .select('recipient_name')
+          .eq('account_number', account)
+          .eq('bank_name', bank.code)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+          
+        if (data && data.recipient_name) {
+          name = data.recipient_name.toUpperCase();
+        }
+      } catch (err) {}
+    }
+
+    const recipient = {
+      name: name.toUpperCase(),
+      account: account,
+      bankBin: bankBin,
+      bank: bank,
+      amount: 0,
+      raw: "",
+      source: "manual"
+    };
+
+    applyRecipient(recipient);
   });
 
   $("#savedTransferSearch").on("input", function () {

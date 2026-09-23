@@ -804,3 +804,8 @@ h1 {
   font-size: 16px;
   color: #fff;
 }
+
+#manualBankSelect option {
+  background: var(--surface);
+  color: white;
+}

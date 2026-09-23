@@ -50,12 +50,36 @@
           <label class="button secondary" for="qrFile">Chọn ảnh QR</label>
           <input id="qrFile" type="file" accept="image/*" hidden>
           <button id="openHistory" class="button ghost" style="grid-column: span 2; margin-top: 0" type="button">Lịch sử quét QR</button>
+          <button id="openManualEntry" class="button ghost" style="grid-column: span 2; margin-top: 0" type="button">Nhập thông tin thủ công</button>
         </div>
       </div>
 
       <div class="demo-note">
         <strong>Lưu ý:</strong> Đây là bản mô phỏng giao diện, không kết nối ngân hàng và không chuyển tiền thật.
       </div>
+    </section>
+
+    <section id="manualEntryScreen" class="screen" aria-labelledby="manualEntryTitle">
+      <header class="page-header compact">
+        <button class="back-button" id="backFromManualEntry" type="button" aria-label="Quay lại">‹</button>
+        <span class="eyebrow">Nhập thủ công</span>
+        <h1 id="manualEntryTitle">Thông tin chuyển khoản</h1>
+      </header>
+
+      <form id="manualEntryForm" class="recipient-name-editor" style="margin-top: 24px;">
+        <label for="manualBankSelect">Ngân hàng</label>
+        <select id="manualBankSelect" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: white; margin-bottom: 16px; font-size: 16px; appearance: none;">
+          <option value="" disabled selected>Chọn ngân hàng</option>
+        </select>
+
+        <label for="manualAccountNumber">Số tài khoản</label>
+        <input id="manualAccountNumber" type="text" autocomplete="off" required placeholder="Nhập số tài khoản" style="margin-bottom: 16px;">
+
+        <label for="manualName">Tên người nhận (Tùy chọn)</label>
+        <input id="manualName" type="text" autocomplete="off" placeholder="Tên tự động tra cứu từ Lịch sử nếu để trống" style="margin-bottom: 24px;">
+
+        <button type="submit" class="button primary full" style="margin-top: 0;">Tiếp tục</button>
+      </form>
     </section>
 
     <section id="confirmScreen" class="screen" aria-labelledby="confirmTitle">
