@@ -51,9 +51,9 @@ import { supabase } from './src/supabase.js';
         };
         
         $("<option>")
-          .val(item.bin)
-          .text(`${item.shortName || item.code} - ${item.name || item.shortName}`)
-          .appendTo("#manualBankSelect");
+          .val(`${item.shortName || item.code} - ${item.name || item.shortName}`)
+          .attr("data-bin", item.bin)
+          .appendTo("#manualBankList");
       });
     }
   });
@@ -855,11 +855,21 @@ import { supabase } from './src/supabase.js';
 
   $("#manualEntryForm").on("submit", async function (event) {
     event.preventDefault();
-    const bankBin = $("#manualBankSelect").val();
+    const bankInputVal = $("#manualBankInput").val();
+    const bankOption = $("#manualBankList option").filter(function() {
+      return this.value === bankInputVal;
+    });
+    
+    const bankBin = bankOption.length ? bankOption.attr("data-bin") : null;
     const account = $("#manualAccountNumber").val().trim();
     let name = $("#manualName").val().trim();
 
-    if (!bankBin || !account) return;
+    if (!bankBin) {
+      alert("Vui lòng chọn ngân hàng từ danh sách.");
+      return;
+    }
+    
+    if (!account) return;
     const bank = BANKS[bankBin];
     if (!bank) return;
 

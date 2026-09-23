@@ -67,10 +67,9 @@
       </header>
 
       <form id="manualEntryForm" class="recipient-name-editor" style="margin-top: 24px;">
-        <label for="manualBankSelect">Ngân hàng</label>
-        <select id="manualBankSelect" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: white; margin-bottom: 16px; font-size: 16px; appearance: none;">
-          <option value="" disabled selected>Chọn ngân hàng</option>
-        </select>
+        <label for="manualBankInput">Ngân hàng</label>
+        <input list="manualBankList" id="manualBankInput" type="text" autocomplete="off" required placeholder="Tìm kiếm ngân hàng" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: white; margin-bottom: 16px; font-size: 16px;">
+        <datalist id="manualBankList"></datalist>
 
         <label for="manualAccountNumber">Số tài khoản</label>
         <input id="manualAccountNumber" type="text" autocomplete="off" required placeholder="Nhập số tài khoản" style="margin-bottom: 16px;">
