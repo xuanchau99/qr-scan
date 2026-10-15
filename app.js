@@ -4,19 +4,45 @@ import { supabase } from './src/supabase.js';
   "use strict";
 
   const BANKS = {
-    "970423": { code: "TPBank", name: "Ngân hàng TMCP Tiên Phong", css: "tpbank", logo: "https://cdn.vietqr.io/img/TPB.png" },
-    "970422": { code: "MBBank", name: "Ngân hàng TMCP Quân đội", css: "mb", logo: "https://cdn.vietqr.io/img/MB.png" },
-    "970436": { code: "Vietcombank", name: "Ngân hàng TMCP Ngoại thương Việt Nam", css: "vcb", logo: "https://cdn.vietqr.io/img/VCB.png" },
-    "970418": { code: "BIDV", name: "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam", css: "bidv", logo: "https://cdn.vietqr.io/img/BIDV.png" },
-    "970407": { code: "Techcombank", name: "Ngân hàng TMCP Kỹ thương Việt Nam", css: "tcb", logo: "https://cdn.vietqr.io/img/TCB.png" },
-    "970415": { code: "VietinBank", name: "Ngân hàng TMCP Công thương Việt Nam", css: "generic", logo: "https://cdn.vietqr.io/img/ICB.png" },
-    "970432": { code: "VPBank", name: "Ngân hàng TMCP Việt Nam Thịnh Vượng", css: "generic", logo: "https://cdn.vietqr.io/img/VPB.png" },
-    "970440": { code: "SeABank", name: "Ngân hàng TMCP Đông Nam Á", css: "generic", logo: "https://cdn.vietqr.io/img/SEAB.png" },
-    "970431": { code: "Eximbank", name: "Ngân hàng TMCP Xuất Nhập khẩu Việt Nam", css: "generic", logo: "https://cdn.vietqr.io/img/EIB.png" },
-    "970403": { code: "Sacombank", name: "Ngân hàng TMCP Sài Gòn Thương Tín", css: "generic", logo: "https://cdn.vietqr.io/img/STB.png" },
-    "970416": { code: "ACB", name: "Ngân hàng TMCP Á Châu", css: "generic", logo: "https://cdn.vietqr.io/img/ACB.png" },
-    "970405": { code: "Agribank", name: "Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam", css: "generic", logo: "https://cdn.vietqr.io/img/VBA.png" }
+    "970423": { code: "TPBank", name: "Ngân hàng TMCP Tiên Phong", css: "tpbank", logo: "logos/TPB.png", icon: "bank-icons/tpb.webp" },
+    "970422": { code: "MBBank", name: "Ngân hàng TMCP Quân đội", css: "mb", logo: "logos/MB.png", icon: "bank-icons/mb.webp" },
+    "970436": { code: "Vietcombank", name: "Ngân hàng TMCP Ngoại thương Việt Nam", css: "vcb", logo: "logos/VCB.png", icon: "bank-icons/vcb.webp" },
+    "970418": { code: "BIDV", name: "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam", css: "bidv", logo: "logos/BIDV.png", icon: "bank-icons/bidv.webp" },
+    "970407": { code: "Techcombank", name: "Ngân hàng TMCP Kỹ thương Việt Nam", css: "tcb", logo: "logos/TCB.png", icon: "bank-icons/tcb.webp" },
+    "970415": { code: "VietinBank", name: "Ngân hàng TMCP Công thương Việt Nam", css: "generic", logo: "logos/ICB.png", icon: "bank-icons/icb.webp" },
+    "970432": { code: "VPBank", name: "Ngân hàng TMCP Việt Nam Thịnh Vượng", css: "generic", logo: "logos/VPB.png", icon: "bank-icons/vpb.webp" },
+    "970440": { code: "SeABank", name: "Ngân hàng TMCP Đông Nam Á", css: "generic", logo: "logos/SEAB.png", icon: "bank-icons/seab.webp" },
+    "970431": { code: "Eximbank", name: "Ngân hàng TMCP Xuất Nhập khẩu Việt Nam", css: "generic", logo: "logos/EIB.png", icon: "bank-icons/eib.webp" },
+    "970403": { code: "Sacombank", name: "Ngân hàng TMCP Sài Gòn Thương Tín", css: "generic", logo: "logos/STB.png", icon: "logos/STB.png" },
+    "970416": { code: "ACB", name: "Ngân hàng TMCP Á Châu", css: "generic", logo: "logos/ACB.png", icon: "bank-icons/acb.webp" },
+    "970405": { code: "Agribank", name: "Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam", css: "generic", logo: "logos/VBA.png", icon: "bank-icons/vba.webp" }
   };
+
+  function getLocalBankVisual(visual, bankCode) {
+    if (!visual) {
+      if (bankCode) {
+        return `logos/${String(bankCode).toUpperCase()}.png`;
+      }
+      return "";
+    }
+    if (!/^https?:\/\//i.test(visual)) return visual;
+    try {
+      const url = new URL(visual);
+      if (url.hostname === "cdn.vietqr.io") {
+        const parts = url.pathname.split("/").filter(Boolean);
+        if (parts[0] === "bank-app-icon" && parts[1]) {
+          return `bank-icons/${parts[1].toLowerCase()}`;
+        }
+        if (parts[0] === "img" && parts[1]) {
+          return `logos/${parts[1].toUpperCase()}`;
+        }
+      }
+    } catch (e) {}
+    if (bankCode) {
+      return `logos/${String(bankCode).toUpperCase()}.png`;
+    }
+    return visual;
+  }
 
   function requestVietQrJson(url) {
     return new Promise((resolve) => {
@@ -26,37 +52,50 @@ import { supabase } from './src/supabase.js';
     });
   }
 
-  const bankCatalogReady = Promise.all([
-    requestVietQrJson("https://api.vietqr.io/v2/banks"),
-    requestVietQrJson("https://api.vietqr.io/v2/android-app-deeplinks")
-  ]).then(([bankResponse, appResponse]) => {
-    const appIcons = {};
-    if (appResponse && Array.isArray(appResponse.apps)) {
-      appResponse.apps.forEach((app) => {
-        const appId = String(app.appId || "").toLowerCase();
-        if (appId && app.appLogo && !appIcons[appId]) appIcons[appId] = app.appLogo;
-      });
-    }
+  const bankCatalogReady = requestVietQrJson("banks-data.json")
+    .then((localData) => {
+      if (localData && (localData.banks || localData.data) && localData.apps) {
+        return [{ data: localData.banks || localData.data }, { apps: localData.apps }];
+      }
+      return Promise.all([
+        requestVietQrJson("https://api.vietqr.io/v2/banks"),
+        requestVietQrJson("https://api.vietqr.io/v2/android-app-deeplinks")
+      ]);
+    })
+    .then(([bankResponse, appResponse]) => {
+      const appIcons = {};
+      if (appResponse && Array.isArray(appResponse.apps)) {
+        appResponse.apps.forEach((app) => {
+          const appId = String(app.appId || "").toLowerCase();
+          if (appId && !appIcons[appId]) {
+            appIcons[appId] = `bank-icons/${appId}.webp`;
+          }
+        });
+      }
 
-    if (bankResponse && Array.isArray(bankResponse.data)) {
-      bankResponse.data.forEach((item) => {
-        if (!item.bin) return;
-        const bankCode = String(item.code || "").toLowerCase();
-        BANKS[String(item.bin)] = {
-          code: item.shortName || item.code || `BIN ${item.bin}`,
-          name: item.name || item.shortName || `Ngân hàng BIN ${item.bin}`,
-          css: "official",
-          logo: item.logo || "",
-          icon: appIcons[bankCode] || ""
-        };
-        
-        $("<option>")
-          .val(`${item.shortName || item.code} - ${item.name || item.shortName}`)
-          .attr("data-bin", item.bin)
-          .appendTo("#manualBankList");
-      });
-    }
-  });
+      const bankList = (bankResponse && (bankResponse.data || bankResponse.banks)) || [];
+      if (Array.isArray(bankList)) {
+        bankList.forEach((item) => {
+          if (!item.bin) return;
+          const bankCode = String(item.code || "").toLowerCase();
+          const codeUpper = String(item.code || "").toUpperCase();
+          const localLogo = `logos/${codeUpper}.png`;
+          const localIcon = appIcons[bankCode] || localLogo;
+          BANKS[String(item.bin)] = {
+            code: item.shortName || item.code || `BIN ${item.bin}`,
+            name: item.name || item.shortName || `Ngân hàng BIN ${item.bin}`,
+            css: "official",
+            logo: localLogo,
+            icon: localIcon
+          };
+          
+          $("<option>")
+            .val(`${item.shortName || item.code} - ${item.name || item.shortName}`)
+            .attr("data-bin", item.bin)
+            .appendTo("#manualBankList");
+        });
+      }
+    });
 
   const state = {
     stream: null,
@@ -154,7 +193,8 @@ import { supabase } from './src/supabase.js';
       code: "MoMo",
       name: "Ví điện tử MoMo",
       css: "official",
-      logo: "https://cdn.vietqr.io/img/momo.png"
+      logo: "logos/MOMO.png",
+      icon: "logos/MOMO.png"
     };
   }
 
@@ -416,7 +456,7 @@ import { supabase } from './src/supabase.js';
     const $logoImage = $("#bankLogoImage");
     $logoBox.removeClass("has-image");
     $logoImage.off(".bankLogo").removeAttr("src");
-    const bankVisual = recipient.bank.icon || recipient.bank.logo;
+    const bankVisual = getLocalBankVisual(recipient.bank.icon || recipient.bank.logo, recipient.bank.code);
     if (bankVisual) {
       $logoImage
         .one("load.bankLogo", () => $logoBox.addClass("has-image"))
@@ -435,7 +475,7 @@ import { supabase } from './src/supabase.js';
 
   function recipientFromSavedAccount(item) {
     const bankBin = Object.keys(BANKS).find((bin) => BANKS[bin].code === item.bank_name) || "";
-    const savedLogo = item.bank_logo || "";
+    const savedLogo = getLocalBankVisual(item.bank_logo, item.bank_name);
     return {
       name: (item.recipient_name || "").toUpperCase(),
       account: item.account_number || "",
@@ -468,7 +508,7 @@ import { supabase } from './src/supabase.js';
 
     accounts.forEach((item) => {
       const recipient = recipientFromSavedAccount(item);
-      const bankVisual = recipient.bank.icon || recipient.bank.logo || item.bank_logo;
+      const bankVisual = getLocalBankVisual(recipient.bank.icon || recipient.bank.logo || item.bank_logo, recipient.bank.code);
       const logo = $("<div>", { class: "bank-logo" }).append($("<span>").attr("data-code", recipient.bank.code.slice(0, 5).toUpperCase()));
       if (bankVisual) {
         logo.addClass("has-image").append($("<img>", { src: bankVisual, alt: "" }));
@@ -704,15 +744,29 @@ import { supabase } from './src/supabase.js';
   }
 
   function loadBankLogo(bank) {
-    const bankVisual = bank.icon || bank.logo;
+    let bankVisual = bank.icon || bank.logo;
+    if (bankVisual) bankVisual = getLocalBankVisual(bankVisual, bank.code);
     if (!bankVisual) return Promise.resolve(null);
     if (bankLogoCache.has(bankVisual)) return bankLogoCache.get(bankVisual);
 
     const request = new Promise((resolve) => {
       const image = new Image();
-      image.crossOrigin = "anonymous";
+      if (/^https?:\/\//i.test(bankVisual)) {
+        image.crossOrigin = "anonymous";
+      }
       image.onload = () => resolve(image);
-      image.onerror = () => resolve(null);
+      image.onerror = () => {
+        const altVisual = bank.logo && bankVisual !== bank.logo ? getLocalBankVisual(bank.logo, bank.code) : null;
+        if (altVisual && altVisual !== bankVisual) {
+          const fallbackImg = new Image();
+          if (/^https?:\/\//i.test(altVisual)) fallbackImg.crossOrigin = "anonymous";
+          fallbackImg.onload = () => resolve(fallbackImg);
+          fallbackImg.onerror = () => resolve(null);
+          fallbackImg.src = altVisual;
+          return;
+        }
+        resolve(null);
+      };
       image.src = bankVisual;
     });
     bankLogoCache.set(bankVisual, request);
@@ -727,12 +781,19 @@ import { supabase } from './src/supabase.js';
     ctx.fill();
 
     if (logoImage) {
-      const maxWidth = 36;
-      const maxHeight = 29;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 21, 0, Math.PI * 2);
+      ctx.clip();
+      const aspect = logoImage.naturalWidth / (logoImage.naturalHeight || 1);
+      const isNearlySquare = aspect >= 0.8 && aspect <= 1.25;
+      const maxWidth = isNearlySquare ? 42 : 36;
+      const maxHeight = isNearlySquare ? 42 : 28;
       const scale = Math.min(maxWidth / logoImage.naturalWidth, maxHeight / logoImage.naturalHeight);
       const width = logoImage.naturalWidth * scale;
       const height = logoImage.naturalHeight * scale;
       ctx.drawImage(logoImage, centerX - width / 2, centerY - height / 2, width, height);
+      ctx.restore();
     } else if (bank.css === "tpbank") {
       ctx.fillStyle = "#4c1769";
       ctx.fill();
@@ -742,7 +803,7 @@ import { supabase } from './src/supabase.js';
       ctx.font = "800 12px -apple-system, BlinkMacSystemFont, 'SF Pro Text', Arial, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(bank.code.slice(0, 4).toUpperCase(), centerX, centerY + 1);
+      ctx.fillText((bank.code || "").slice(0, 4).toUpperCase(), centerX, centerY + 1);
     }
     ctx.restore();
   }
@@ -855,12 +916,30 @@ import { supabase } from './src/supabase.js';
 
   $("#manualEntryForm").on("submit", async function (event) {
     event.preventDefault();
-    const bankInputVal = $("#manualBankInput").val();
-    const bankOption = $("#manualBankList option").filter(function() {
+    const bankInputVal = ($("#manualBankInput").val() || "").trim();
+    let bankOption = $("#manualBankList option").filter(function() {
       return this.value === bankInputVal;
     });
     
-    const bankBin = bankOption.length ? bankOption.attr("data-bin") : null;
+    let bankBin = bankOption.length ? bankOption.attr("data-bin") : null;
+    if (!bankBin && bankInputVal) {
+      const lowerVal = bankInputVal.toLowerCase();
+      const matchedOption = $("#manualBankList option").filter(function() {
+        return (this.value || "").toLowerCase().includes(lowerVal);
+      }).first();
+      if (matchedOption.length) {
+        bankBin = matchedOption.attr("data-bin");
+      }
+    }
+    if (!bankBin && bankInputVal) {
+      const lowerVal = bankInputVal.toLowerCase();
+      const binFound = Object.keys(BANKS).find((bin) => {
+        const b = BANKS[bin];
+        return (b.code && b.code.toLowerCase().includes(lowerVal)) ||
+               (b.name && b.name.toLowerCase().includes(lowerVal));
+      });
+      if (binFound) bankBin = binFound;
+    }
     const account = $("#manualAccountNumber").val().trim();
     let name = $("#manualName").val().trim();
 
@@ -957,7 +1036,7 @@ import { supabase } from './src/supabase.js';
           account_number: state.recipient.account,
           recipient_name: state.recipient.name,
           bank_name: state.recipient.bank.code,
-          bank_logo: state.recipient.bank.logo || state.recipient.bank.icon || ""
+          bank_logo: getLocalBankVisual(state.recipient.bank.icon || state.recipient.bank.logo, state.recipient.bank.code) || ""
         }]);
         if (error) console.error("Lỗi khi lưu QR:", error);
       }
@@ -1010,8 +1089,9 @@ import { supabase } from './src/supabase.js';
       
       listContainer.empty();
       data.forEach(item => {
-        const hasImage = item.bank_logo ? "has-image" : "";
-        const logoContent = item.bank_logo ? `<img src="${item.bank_logo}" alt="Logo">` : `<span>${item.bank_name.slice(0, 4)}</span>`;
+        const visual = getLocalBankVisual(item.bank_logo, item.bank_name);
+        const hasImage = visual ? "has-image" : "";
+        const logoContent = visual ? `<img src="${visual}" alt="Logo">` : `<span>${(item.bank_name || "").slice(0, 4)}</span>`;
         
         const itemHtml = $(`
           <div class="history-item">
@@ -1032,7 +1112,7 @@ import { supabase } from './src/supabase.js';
              name: item.recipient_name,
              account: item.account_number,
              bankBin: bankBin,
-             bank: BANKS[bankBin] || { code: item.bank_name, name: item.bank_name, css: "generic", logo: item.bank_logo, icon: item.bank_logo },
+             bank: BANKS[bankBin] || { code: item.bank_name, name: item.bank_name, css: "generic", logo: visual, icon: visual },
              amount: 0,
              raw: ""
            };
